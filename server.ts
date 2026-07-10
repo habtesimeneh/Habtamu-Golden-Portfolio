@@ -94,6 +94,9 @@ async function initDb() {
         port: DB_PORT,
         user: DB_USER,
         password: DB_PASSWORD,
+        ssl: {
+          rejectUnauthorized: false  
+        }
       });
       await adminConnection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
       await adminConnection.end();
@@ -105,6 +108,9 @@ async function initDb() {
         user: DB_USER,
         password: DB_PASSWORD,
         database: DB_NAME,
+        ssl: {
+          rejectUnauthorized: false  
+        },
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
