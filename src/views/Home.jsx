@@ -8,7 +8,9 @@ import {
   Mail,
   ArrowRight,
   Award,
-  Database
+  Database,
+  Code2,
+  Star
 } from "lucide-react";
 
 export default function Home() {
@@ -509,6 +511,96 @@ export default function Home() {
 
             </div>
           )}
+        </div>
+      </section>
+
+      {/* SECTION 4: GITHUB REPOSITORY CARD */}
+      <section className="py-24 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 relative z-10">
+        <div className="max-w-4xl mx-auto px-6">
+          
+          <div className="text-center mb-12">
+            <span className="text-xs font-mono uppercase tracking-widest text-gold-600 dark:text-gold-500 font-semibold block mb-2">
+              Open Source
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+              View Source Code
+            </h2>
+            <div className="w-12 h-1 bg-gold-500 mx-auto mt-4" />
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="bg-white dark:bg-zinc-900/60 border border-gray-200 dark:border-white/10 rounded-2xl p-8 sm:p-10 shadow-xl dark:shadow-none hover:shadow-2xl transition-all duration-500"
+          >
+            <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+              {/* Left: GitHub Icon */}
+              <div className="flex-shrink-0">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-900 to-gray-700 dark:from-gray-800 dark:to-gray-600 flex items-center justify-center shadow-lg">
+                  <Github className="w-10 h-10 text-white" />
+                </div>
+              </div>
+
+              {/* Middle: Text */}
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                  Habtamu Golden Portfolio
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mt-2 max-w-lg">
+                  This portfolio is built with React, Express, TypeScript, and MySQL. 
+                  Feel free to explore, fork, or contribute!
+                </p>
+                
+                {/* Tech Tags */}
+                <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-4">
+                  <span className="px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-full text-xs font-mono text-gray-600 dark:text-gray-400">React 18</span>
+                  <span className="px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-full text-xs font-mono text-gray-600 dark:text-gray-400">Express.js</span>
+                  <span className="px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-full text-xs font-mono text-gray-600 dark:text-gray-400">TypeScript</span>
+                  <span className="px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-full text-xs font-mono text-gray-600 dark:text-gray-400">MySQL</span>
+                  <span className="px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-full text-xs font-mono text-gray-600 dark:text-gray-400">Tailwind</span>
+                </div>
+              </div>
+
+              {/* Right: Button */}
+              <div className="flex-shrink-0">
+                <a
+                  href="https://github.com/habtesimeneh/Habtamu-Golden-Portfolio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 px-6 py-3.5 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-800 dark:to-gray-600 text-white rounded-xl hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group"
+                >
+                  <Github className="w-5 h-5" />
+                  <span className="font-semibold text-sm">View on GitHub</span>
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </a>
+                
+                {/* Star badge */}
+                <div className="flex items-center justify-center md:justify-end gap-1 mt-3 text-xs text-gray-500 dark:text-gray-400">
+                  <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                  <span>Star this repo</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Extra: Stats */}
+          <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-gray-500 dark:text-gray-400">
+            <span className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span>Open Source</span>
+            </span>
+            <span className="flex items-center gap-2">
+              <Code2 className="w-4 h-4" />
+              <span>MIT License</span>
+            </span>
+            <span className="flex items-center gap-2">
+              <span>⚡</span>
+              <span>Deployed on Render</span>
+            </span>
+          </div>
+
         </div>
       </section>
 

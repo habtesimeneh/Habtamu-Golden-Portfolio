@@ -88,28 +88,42 @@ async function initDb() {
   if (DB_TYPE === "mysql") {
     console.log(`[Database] Connecting to MySQL server at ${DB_HOST}:${DB_PORT} as ${DB_USER}...`);
     try {
-      // Connect without DB name first to ensure the DB exists
+      // 👇 CA Certificate ፋይሉን አንብብ
+      let caCert: Buffer | undefined;
+      try {
+        caCert = fs.readFileSync(path.join(process.cwd(), 'ca.pem'));
+        console.log("[Database] CA Certificate loaded successfully.");
+      } catch (err) {
+        console.warn("[Database] CA Certificate not found, using SSL without verification.");
+        // ፋይሉ ከሌለ rejectUnauthorized: false ተጠቀም
+      }
+
       const adminConnection = await mysql.createConnection({
         host: DB_HOST,
         port: DB_PORT,
         user: DB_USER,
         password: DB_PASSWORD,
-        ssl: {
-          rejectUnauthorized: false  
+        ssl: caCert ? {
+          ca: caCert,
+          rejectUnauthorized: true
+        } : {
+          rejectUnauthorized: false
         }
       });
       await adminConnection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
       await adminConnection.end();
 
-      // Connect to the specific database pool
       mysqlPool = mysql.createPool({
         host: DB_HOST,
         port: DB_PORT,
         user: DB_USER,
         password: DB_PASSWORD,
         database: DB_NAME,
-        ssl: {
-          rejectUnauthorized: false  
+        ssl: caCert ? {
+          ca: caCert,
+          rejectUnauthorized: true
+        } : {
+          rejectUnauthorized: false
         },
         waitForConnections: true,
         connectionLimit: 10,
@@ -119,14 +133,12 @@ async function initDb() {
       console.log(`[Database] MySQL Connected successfully! Database Name: ${DB_NAME}`);
     } catch (err: any) {
       console.error("[Database] Failed to connect to MySQL database! Falling back to SQLite.", err.message);
-      // Fallback to SQLite if MySQL connection fails
       setupSqliteFallback();
     }
   } else {
     setupSqliteFallback();
   }
 }
-
 function setupSqliteFallback() {
   console.log("[Database] Initializing SQLite database...");
   const dbPath = path.join(process.cwd(), "database.db");
