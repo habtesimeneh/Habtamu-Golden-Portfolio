@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-gold-50: #fdfbf7;
+  --color-gold-100: #fbf7ee;
+  --color-gold-200: #f5e9d2;
+  --color-gold-300: #ebd3a8;
+  --color-gold-400: #deb77a;
+  --color-gold-500: #d4af37; /* Standard luxury gold */
+  --color-gold-600: #bd962c;
+  --color-gold-700: #a07823;
+  --color-gold-800: #815e1c;
+  --color-gold-900: #624617;
+  --color-gold-950: #44300e;
+}
+
+@layer base {
+  :root {
+    --bg-app: #f9f9fb;
+    --text-app: #151515;
+  }
+  
+  :root.dark {
+    --bg-app: #050505;
+    --text-app: #e5e5e5;
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-app);
+    font-family: var(--font-sans);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+/* Custom premium scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+::-webkit-scrollbar-thumb {
+  background: #c5a02e;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d4af37;
+}
+
+/* Glassmorphism custom classes */
+.glass-panel {
+  background: rgba(12, 12, 12, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.08);
+}
+
+.glass-panel-heavy {
+  background: rgba(6, 6, 6, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+/* Luxury gold text clip */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #fce085 0%, #d4af37 50%, #aa841c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #fce085 0%, #d4af37 50%, #aa841c 100%);
+}
+
+.border-gold-gradient {
+  border-image: linear-gradient(135deg, #fce085, #d4af37, #aa841c) 1;
+}
+
+/* Gold glow effect on hover */
+.hover-gold-glow {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-gold-glow:hover {
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.25);
+  transform: translateY(-2px);
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+/* Custom glow animations in background */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(1.1);
+  }
+}
+
+.bg-pulse-glow {
+  animation: pulseGlow 12s infinite ease-in-out;
+}
