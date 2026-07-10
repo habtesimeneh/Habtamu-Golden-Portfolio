@@ -69,16 +69,9 @@ export default function Login({ onLogin }) {
     <div className="relative min-h-screen bg-white dark:bg-[#050505] text-gray-900 dark:text-white flex items-center justify-center p-6 overflow-hidden transition-colors duration-300">
       
       {/* Background glow overlay */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gold-500/5 rounded-full blur-[140px] bg-pulse-glow" />
 
       {/* Back to Home shortcut */}
-      <button
-        onClick={() => navigate("/")}
-        className="absolute top-8 left-8 flex items-center gap-2 text-xs font-mono tracking-wider uppercase text-gray-500 hover:text-gold-600 dark:hover:text-gold-500 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span>Return Home</span>
-      </button>
+      
 
       <div className="max-w-md w-full relative z-10">
         <AnimatePresence mode="wait">
