@@ -9,7 +9,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import * as cloudinary from 'cloudinary';
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+import multerStorageCloudinary from "multer-storage-cloudinary";
 import { createServer as createViteServer } from "vite";
 
 const app = express();
@@ -1470,11 +1470,11 @@ app.delete("/api/resume/:id", authenticateToken, async (req, res) => {
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dh99jg50',
   api_key: process.env.CLOUDINARY_API_KEY || '141979696587613',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'YOUR_API_SECRET',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'AVnw-oYqC4juRGYphk5gSynwpqo',
 });
 
 // Cloudinary Storage
-const storage = new CloudinaryStorage({
+const storage = multerStorageCloudinary({
   cloudinary: cloudinary.v2,
   params: {
     folder: 'habtamu_portfolio',
