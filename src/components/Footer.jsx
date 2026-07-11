@@ -100,7 +100,9 @@ social_github: "https://github.com/habtamu",
             )}
              {settings.  social_instagram && (
               <a
-                href={`mailto:${settings.contact_email}`}
+                href={settings.social_instagram}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-gold-500 hover:border-gold-500 hover:bg-gold-500/5 transition-all duration-300"
               >
                 <Instagram className="w-4 h-4" />
