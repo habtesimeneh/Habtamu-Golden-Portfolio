@@ -6,9 +6,10 @@ export default function Footer({ isAdmin }) {
   const currentYear = new Date().getFullYear();
   const [settings, setSettings] = useState({
     site_name: "Habtamu Simeneh",
-    social_github: "https://github.com/habtamu",
+social_github: "https://github.com/habtamu",
     social_linkedin: "https://linkedin.com/in/habtamu",
     social_twitter: "https://twitter.com/habtamu",
+     social_instagram: "https://www.instagram.com/habte2121/",
     contact_email: "habtesimeneh30@gmail.com",
   });
 

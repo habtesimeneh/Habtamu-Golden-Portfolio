@@ -34,6 +34,7 @@ export default function Home() {
     social_github: "https://github.com/habtamu",
     social_linkedin: "https://linkedin.com/in/habtamu",
     social_twitter: "https://twitter.com/habtamu",
+     social_instagram: "https://www.instagram.com/habte2121/",
     profile_image: "",
   });
 
