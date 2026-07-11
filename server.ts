@@ -1490,7 +1490,7 @@ cloudinary.config({
 });
 
 // Cloudinary Storage አዘጋጅ
-const storage = new CloudinaryStorage({
+const cloudStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'habtamu_portfolio',
@@ -1501,8 +1501,8 @@ const storage = new CloudinaryStorage({
   } as any,
 });
 
-const upload = multer({
-  storage,
+const cloudinaryUpload = multer({
+  storage: cloudStorage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|doc|docx/;
@@ -1516,8 +1516,8 @@ const upload = multer({
   },
 });
 
-// FILE UPLOAD ENDPOINT (UPDATED WITH CLOUDINARY)
-app.post("/api/upload", authenticateToken, upload.single("file"), (req: any, res) => {
+// FILE UPLOAD ENDPOINT
+app.post("/api/upload", authenticateToken, cloudinaryUpload.single("file"), (req: any, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file was uploaded or file type is invalid" });
   }
