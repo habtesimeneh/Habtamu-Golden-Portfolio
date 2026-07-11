@@ -98,6 +98,14 @@ social_github: "https://github.com/habtamu",
                 <Twitter className="w-4 h-4" />
               </a>
             )}
+             {settings.  social_instagram && (
+              <a
+                href={`mailto:${settings.contact_email}`}
+                className="p-2 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-gold-500 hover:border-gold-500 hover:bg-gold-500/5 transition-all duration-300"
+              >
+                <Instagram className="w-4 h-4" />
+              </a>
+            )}
             {settings.contact_email && (
               <a
                 href={`mailto:${settings.contact_email}`}
@@ -106,6 +114,7 @@ social_github: "https://github.com/habtamu",
                 <Mail className="w-4 h-4" />
               </a>
             )}
+
           </div>
         </div>
       </div>
