@@ -8,12 +8,12 @@ import mysql from "mysql2/promise";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import multer from "multer";
-import * as cloudinary from 'cloudinary';
-import multerStorageCloudinary from "multer-storage-cloudinary";
+import { v2 as cloudinary } from 'cloudinary';
+import multerStorageCloudinary from 'multer-storage-cloudinary';
 import { createServer as createViteServer } from "vite";
 
 const app = express();
-const PORT = Number(process.env.PORT || 3001);
+const PORT = Number(process.env.PORT || 8080);
 const JWT_SECRET = process.env.JWT_SECRET || "habtamu_gold_portfolio_secret_2026";
 
 // Middlewares
@@ -1467,7 +1467,7 @@ app.delete("/api/resume/:id", authenticateToken, async (req, res) => {
 });
 
 // Cloudinary configuration
-cloudinary.v2.config({
+cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dh99jg50',
   api_key: process.env.CLOUDINARY_API_KEY || '141979696587613',
   api_secret: process.env.CLOUDINARY_API_SECRET || 'AVnw-oYqC4juRGYphk5gSynwpqo',
@@ -1475,7 +1475,7 @@ cloudinary.v2.config({
 
 // Cloudinary Storage
 const storage = multerStorageCloudinary({
-  cloudinary: cloudinary.v2,
+  cloudinary,
   params: {
     folder: 'habtamu_portfolio',
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
@@ -1582,27 +1582,25 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`\n======================================================`);
-    console.log(`🚀 HABTAMU PORTFOLIO CMS DEV SERVER`);
-    console.log(`   Running on http://localhost:${PORT}`);
-    console.log(`   Active Database Dialect: ${DB_TYPE.toUpperCase()}`);
-    console.log(`======================================================\n`);
-  }).on("error", (err: any) => {
-    if (err.code === "EADDRINUSE") {
-      console.error(`Port ${PORT} is busy. Trying ${PORT + 1}...`);
-      app.listen(PORT + 1, "0.0.0.0", () => {
-        console.log(`\n======================================================`);
-        console.log(`🚀 HABTAMU PORTFOLIO CMS DEV SERVER`);
-        console.log(`   Running on http://localhost:${PORT + 1}`);
-        console.log(`   Active Database Dialect: ${DB_TYPE.toUpperCase()}`);
-        console.log(`======================================================\n`);
-      });
-    } else {
-      console.error(err);
-      process.exit(1);
-    }
-  });
+  const tryListen = (port: number) => {
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`\n======================================================`);
+      console.log(`🚀 HABTAMU PORTFOLIO CMS DEV SERVER`);
+      console.log(`   Running on http://localhost:${port}`);
+      console.log(`   Active Database Dialect: ${DB_TYPE.toUpperCase()}`);
+      console.log(`======================================================\n`);
+    }).on("error", (err: any) => {
+      if (err.code === "EADDRINUSE") {
+        console.warn(`Port ${port} is busy. Trying ${port + 1}...`);
+        tryListen(port + 1);
+      } else {
+        console.error(err);
+        process.exit(1);
+      }
+    });
+  };
+
+  tryListen(PORT);
 }
 
 startServer();
