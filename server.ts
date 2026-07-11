@@ -8,8 +8,8 @@ import mysql from "mysql2/promise";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import multer from "multer";
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import * as cloudinary from 'cloudinary';
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 import { createServer as createViteServer } from "vite";
 
 const app = express();
@@ -44,7 +44,7 @@ if (!fs.existsSync(uploadsDir)) {
 app.use("/uploads", express.static(uploadsDir));
 
 // Multer Storage Configuration
-const storage = multer.diskStorage({
+const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
   },
@@ -53,22 +53,6 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname);
     cb(null, file.fieldname + "-" + uniqueSuffix + ext);
   },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx/;
-    const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mime = allowedTypes.test(file.mimetype);
-    if (ext && mime) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only images (jpeg, jpg, png, gif) and documents (pdf, doc, docx) are allowed"));
-    }
-  },
-
 });
 
 // ==========================================
@@ -1482,27 +1466,25 @@ app.delete("/api/resume/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// Cloudinary አዘጋጅ
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+// Cloudinary configuration
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dh99jg50',
+  api_key: process.env.CLOUDINARY_API_KEY || '141979696587613',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'YOUR_API_SECRET',
 });
 
-// Cloudinary Storage አዘጋጅ
-const cloudStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
+// Cloudinary Storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary.v2,
   params: {
     folder: 'habtamu_portfolio',
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
-    transformation: [
-      { width: 800, height: 800, crop: 'limit' }
-    ]
-  } as any,
+    transformation: [{ width: 800, height: 800, crop: 'limit' }],
+  },
 });
 
-const cloudinaryUpload = multer({
-  storage: cloudStorage,
+const upload = multer({
+  storage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|doc|docx/;
@@ -1517,7 +1499,7 @@ const cloudinaryUpload = multer({
 });
 
 // FILE UPLOAD ENDPOINT
-app.post("/api/upload", authenticateToken, cloudinaryUpload.single("file"), (req: any, res) => {
+app.post("/api/upload", authenticateToken, upload.single("file"), (req: any, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file was uploaded or file type is invalid" });
   }
