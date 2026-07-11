@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Github, Linkedin, Twitter, Mail } from "lucide-react";
+import { Github, Linkedin, Twitter,Instagram, Mail } from "lucide-react";
 
 export default function Footer({ isAdmin }) {
   const currentYear = new Date().getFullYear();
