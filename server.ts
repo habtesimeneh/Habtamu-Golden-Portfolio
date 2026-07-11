@@ -9,6 +9,14 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import { createServer as createViteServer } from "vite";
+import cloudinary from "cloudinary";
+
+// Configure Cloudinary
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const app = express();
 const PORT = Number(process.env.PORT || 9000);
@@ -34,22 +42,27 @@ app.use((req, res, next) => {
   }
 });
 
-// Setup upload directories
+// Setup upload directories (local fallback not used for uploads, but kept for static files if any)
 const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 app.use("/uploads", express.static(uploadsDir));
 
-// Multer Storage Configuration (Local fallback)
-const diskStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+// Multer setup with memoryStorage (for Cloudinary streaming)
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|doc|docx/;
+    const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mime = allowedTypes.test(file.mimetype);
+    if (ext && mime) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only images and documents are allowed"));
+    }
   },
 });
 
@@ -72,7 +85,6 @@ async function initDb() {
   if (DB_TYPE === "mysql") {
     console.log(`[Database] Connecting to MySQL server at ${DB_HOST}:${DB_PORT} as ${DB_USER}...`);
     try {
-      // 👇 CA Certificate ፋይሉን አንብብ
       let caCert: Buffer | undefined;
       try {
         caCert = fs.readFileSync(path.join(process.cwd(), 'ca.pem'));
@@ -1396,47 +1408,39 @@ app.delete("/api/resume/:id", authenticateToken, async (req, res) => {
 });
 
 // ==========================================
-// LOCAL FILE UPLOAD STORAGE
+// FILE UPLOAD ENDPOINT (Cloudinary)
 // ==========================================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|doc|docx/;
-    const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mime = allowedTypes.test(file.mimetype);
-    if (ext && mime) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only images and documents are allowed"));
-    }
-  },
-});
-
-// FILE UPLOAD ENDPOINT
-app.post("/api/upload", authenticateToken, upload.single("file"), (req: any, res) => {
+app.post("/api/upload", authenticateToken, upload.single("file"), async (req: any, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file was uploaded or file type is invalid" });
   }
 
-  const fileUrl = `/uploads/${req.file.filename}`;
+  try {
+    // Upload to Cloudinary
+    const result = await new Promise<any>((resolve, reject) => {
+      const uploadStream = cloudinary.v2.uploader.upload_stream(
+        {
+          folder: "portfolio",
+          resource_type: "auto",
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
 
-  res.json({
-    message: "File uploaded successfully!",
-    fileUrl,
-    filename: req.file.filename,
-    size: req.file.size,
-    mimetype: req.file.mimetype,
-  });
+    res.json({
+      message: "File uploaded successfully!",
+      fileUrl: result.secure_url,
+      filename: result.public_id,
+      size: result.bytes,
+      mimetype: req.file.mimetype,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // STATS ENDPOINT
