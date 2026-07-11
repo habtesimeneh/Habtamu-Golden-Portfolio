@@ -1427,11 +1427,13 @@ app.post("/api/upload", authenticateToken, upload.single("file"), (req: any, res
   if (!req.file) {
     return res.status(400).json({ error: "No file was uploaded or file type is invalid" });
   }
-  const fileUrl = req.file.path || (req.file as any).url;
+
+  const fileUrl = `/uploads/${req.file.filename}`;
+
   res.json({
     message: "File uploaded successfully!",
-    fileUrl: fileUrl,
-    filename: req.file.filename || (req.file as any).public_id,
+    fileUrl,
+    filename: req.file.filename,
     size: req.file.size,
     mimetype: req.file.mimetype,
   });
