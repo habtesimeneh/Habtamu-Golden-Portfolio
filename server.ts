@@ -8,8 +8,6 @@ import mysql from "mysql2/promise";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import multer from "multer";
-import { v2 as cloudinary } from 'cloudinary';
-import multerStorageCloudinary from 'multer-storage-cloudinary';
 import { createServer as createViteServer } from "vite";
 
 const app = express();
@@ -1398,25 +1396,19 @@ app.delete("/api/resume/:id", authenticateToken, async (req, res) => {
 });
 
 // ==========================================
-// CLOUDINARY STORAGE SETUP (FIXED)
+// LOCAL FILE UPLOAD STORAGE
 // ==========================================
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dh99jg50',
-  api_key: process.env.CLOUDINARY_API_KEY || '141979696587613',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'AVnw-oYqC4juRGYphk5gSynwpqo',
-});
-
-const storage = multerStorageCloudinary({
-  cloudinary,
-  params: {
-    folder: 'habtamu_portfolio',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
-    transformation: [{ width: 800, height: 800, crop: 'limit' }],
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
   },
 });
 
 const upload = multer({
-  storage: storage,
+  storage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|doc|docx/;
