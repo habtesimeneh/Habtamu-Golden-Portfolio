@@ -1474,8 +1474,9 @@ cloudinary.config({
 });
 
 // Cloudinary Storage
-const storage = multerStorageCloudinary({
-  cloudinary,
+// @ts-ignore
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
   params: {
     folder: 'habtamu_portfolio',
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
