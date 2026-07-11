@@ -13,13 +13,9 @@ export default defineConfig(() => {
     },
     server: {
       host: '0.0.0.0',
-      port: Number(process.env.PORT || 8080),
+      port: Number(process.env.PORT || 9000),
       strictPort: true,
-      hmr: {
-        host: 'localhost',
-        port: Number(process.env.VITE_HMR_PORT || 8081),
-        clientPort: Number(process.env.VITE_HMR_PORT || 8081),
-      },
+      hmr: false,
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },

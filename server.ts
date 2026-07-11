@@ -13,7 +13,7 @@ import multerStorageCloudinary from 'multer-storage-cloudinary';
 import { createServer as createViteServer } from "vite";
 
 const app = express();
-const PORT = Number(process.env.PORT || 8080);
+const PORT = Number(process.env.PORT || 9000);
 const JWT_SECRET = process.env.JWT_SECRET || "habtamu_gold_portfolio_secret_2026";
 
 // Middlewares
@@ -43,7 +43,7 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use("/uploads", express.static(uploadsDir));
 
-// Multer Storage Configuration
+// Multer Storage Configuration (Local fallback)
 const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
@@ -81,7 +81,6 @@ async function initDb() {
         console.log("[Database] CA Certificate loaded successfully.");
       } catch (err) {
         console.warn("[Database] CA Certificate not found, using SSL without verification.");
-        // ፋይሉ ከሌለ rejectUnauthorized: false ተጠቀም
       }
 
       const adminConnection = await mysql.createConnection({
@@ -125,6 +124,7 @@ async function initDb() {
     setupSqliteFallback();
   }
 }
+
 function setupSqliteFallback() {
   console.log("[Database] Initializing SQLite database...");
   const dbPath = path.join(process.cwd(), "database.db");
@@ -132,7 +132,6 @@ function setupSqliteFallback() {
   sqliteDb.pragma("foreign_keys = ON");
 }
 
-// Translate SQLite syntax to MySQL syntax
 function translateSql(sql: string): string {
   if (DB_TYPE === "mysql" && mysqlPool) {
     return sql
@@ -142,7 +141,6 @@ function translateSql(sql: string): string {
   return sql;
 }
 
-// Unified Query Executers
 async function dbQuery(sql: string, params: any[] = []): Promise<any[]> {
   const translated = translateSql(sql);
   if (DB_TYPE === "mysql" && mysqlPool) {
@@ -177,25 +175,12 @@ async function dbRun(sql: string, params: any[] = []): Promise<{ lastInsertRowid
 
 async function dbExec(sql: string): Promise<void> {
   if (DB_TYPE === "mysql" && mysqlPool) {
-    // Process statements into valid MySQL dialect
     let mysqlSql = sql
       .replace(/INTEGER PRIMARY KEY AUTOINCREMENT/g, "INT AUTO_INCREMENT PRIMARY KEY")
-      .replace(/CHECK\s*\([^)]*\)/g, ""); // strip check constraints
-
-    mysqlSql = mysqlSql.replace(
-      /key TEXT UNIQUE/g,
-      "`key` VARCHAR(255) UNIQUE"
-    );
-
-    mysqlSql = mysqlSql.replace(
-      /value TEXT/g,
-      "`value` LONGTEXT"
-    );
-
-    mysqlSql = mysqlSql.replace(
-      /username TEXT UNIQUE/g,
-      "username VARCHAR(255) UNIQUE"
-    );
+      .replace(/CHECK\s*\([^)]*\)/g, "")
+      .replace(/key TEXT UNIQUE/g, "`key` VARCHAR(255) UNIQUE")
+      .replace(/value TEXT/g, "`value` LONGTEXT")
+      .replace(/username TEXT UNIQUE/g, "username VARCHAR(255) UNIQUE");
     await mysqlPool.query(mysqlSql);
   } else {
     sqliteDb.exec(sql);
@@ -351,7 +336,6 @@ const SCHEMA_SQL = `
 `;
 
 async function seedDatabase() {
-  // 1. Seed Admin User
   const userCount = await dbGet("SELECT COUNT(*) as count FROM users");
   if (userCount.count === 0) {
     const hashedPassword = bcrypt.hashSync("Habtish2121", 10);
@@ -370,7 +354,6 @@ async function seedDatabase() {
     console.log("[Database] Admin user seeded!");
   }
 
-  // 2. Seed Skills
   const skillsCount = await dbGet("SELECT COUNT(*) as count FROM skills");
   if (skillsCount.count === 0) {
     const defaultSkills = [
@@ -395,7 +378,6 @@ async function seedDatabase() {
     console.log("[Database] Skills seeded!");
   }
 
-  // 3. Seed Projects
   const projectsCount = await dbGet("SELECT COUNT(*) as count FROM projects");
   if (projectsCount.count === 0) {
     const defaultProjects = [
@@ -446,7 +428,6 @@ async function seedDatabase() {
     console.log("[Database] Projects seeded!");
   }
 
-  // 4. Seed Experience
   const expCount = await dbGet("SELECT COUNT(*) as count FROM experience");
   if (expCount.count === 0) {
     const defaultExps = [
@@ -474,7 +455,6 @@ async function seedDatabase() {
     }
   }
 
-  // 5. Seed Education
   const eduCount = await dbGet("SELECT COUNT(*) as count FROM education");
   if (eduCount.count === 0) {
     const defaultEdus = [
@@ -496,7 +476,6 @@ async function seedDatabase() {
     }
   }
 
-  // 6. Seed Services
   const servicesCount = await dbGet("SELECT COUNT(*) as count FROM services");
   if (servicesCount.count === 0) {
     const defaultServices = [
@@ -527,7 +506,6 @@ async function seedDatabase() {
     console.log("[Database] Services seeded!");
   }
 
-  // 7. Seed Testimonials
   const tCount = await dbGet("SELECT COUNT(*) as count FROM testimonials");
   if (tCount.count === 0) {
     const defaultTestimonials = [
@@ -555,7 +533,6 @@ async function seedDatabase() {
     }
   }
 
-  // 8. Seed Blogs
   const blogsCount = await dbGet("SELECT COUNT(*) as count FROM blogs");
   if (blogsCount.count === 0) {
     const defaultBlogs = [
@@ -563,50 +540,14 @@ async function seedDatabase() {
         title: "Exploring Telebirr and Chapa Integrations in Express",
         category: "Development",
         image_url: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&q=80&w=800",
-        content: `### Integrating Local Payment Gateways in Ethiopia
-
-Modern payment systems in Ethiopia, such as **Telebirr** and **Chapa**, have revolutionized digital e-commerce. As developers, setting up seamless API handshakes is critical for robust customer experiences.
-
-In this post, we discuss:
-1. **API Signature Validation**: How to verify digital signatures from Telebirr.
-2. **Payload Security**: Leveraging AES encryption on server-to-server request routes.
-3. **Webhook Reconciliation**: Implementing transaction listeners to automatically update database orders securely.
-
-\`\`\`javascript
-// Example validation snippet using crypto
-const crypto = require('crypto');
-function decryptPayload(encryptedData, key) {
-  const decipher = crypto.createDecipheriv('aes-128-cbc', key, iv);
-  let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return JSON.parse(decrypted);
-}
-\`\`\`
-
-By ensuring end-to-end security, full-stack applications in East Africa can gain unmatched developer confidence.`,
+        content: `### Integrating Local Payment Gateways in Ethiopia\n\nModern payment systems in Ethiopia, such as **Telebirr** and **Chapa**, have revolutionized digital e-commerce. As developers, setting up seamless API handshakes is critical for robust customer experiences.\n\nIn this post, we discuss:\n1. **API Signature Validation**: How to verify digital signatures from Telebirr.\n2. **Payload Security**: Leveraging AES encryption on server-to-server request routes.\n3. **Webhook Reconciliation**: Implementing transaction listeners to automatically update database orders securely.\n\n\`\`\`javascript\n// Example validation snippet using crypto\nconst crypto = require('crypto');\nfunction decryptPayload(encryptedData, key) {\n  const decipher = crypto.createDecipheriv('aes-128-cbc', key, iv);\n  let decrypted = decipher.update(encryptedData, 'hex', 'utf8');\n  decrypted += decipher.final('utf8');\n  return JSON.parse(decrypted);\n}\n\`\`\`\n\nBy ensuring end-to-end security, full-stack applications in East Africa can gain unmatched developer confidence.`,
         views: 345
       },
       {
         title: "Mastering Database Schemas: From Normalization to Optimization",
         category: "Databases",
         image_url: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?auto=format&fit=crop&q=80&w=800",
-        content: `### Relational Database Engineering
-
-Every complex web system lives or dies by its database. When building an enterprise portfolio CMS or e-commerce portal, structuring relational tables requires precision.
-
-#### 1. Database Normalization (1NF to 3NF)
-Structuring databases to prevent data redundancy:
-* **First Normal Form**: Eliminate duplicate columns and ensure atomic values.
-* **Second Normal Form**: Remove partial dependencies.
-* **Third Normal Form**: Remove transitive dependencies.
-
-#### 2. Query Optimization
-Leverage indexing on foreign keys and commonly searched fields:
-\`\`\`sql
-CREATE INDEX idx_project_category ON projects(category);
-\`\`\`
-
-Always use **prepared statements** to shield against dangerous SQL Injection attacks!`,
+        content: `### Relational Database Engineering\n\nEvery complex web system lives or dies by its database. When building an enterprise portfolio CMS or e-commerce portal, structuring relational tables requires precision.\n\n#### 1. Database Normalization (1NF to 3NF)\nStructuring databases to prevent data redundancy:\n* **First Normal Form**: Eliminate duplicate columns and ensure atomic values.\n* **Second Normal Form**: Remove partial dependencies.\n* **Third Normal Form**: Remove transitive dependencies.\n\n#### 2. Query Optimization\nLeverage indexing on foreign keys and commonly searched fields:\n\`\`\`sql\nCREATE INDEX idx_project_category ON projects(category);\n\`\`\`\n\nAlways use **prepared statements** to shield against dangerous SQL Injection attacks!`,
         views: 289
       }
     ];
@@ -619,7 +560,6 @@ Always use **prepared statements** to shield against dangerous SQL Injection att
     }
   }
 
-  // 9. Seed Settings
   const settingsCount = await dbGet("SELECT COUNT(*) as count FROM settings");
   if (settingsCount.count === 0) {
     const defaultSettings = [
@@ -635,21 +575,19 @@ Always use **prepared statements** to shield against dangerous SQL Injection att
       { key: "profile_image", value: "" },
       { key: "resume_url", value: "/uploads/habtamu_resume.pdf" }
     ];
-   for (const s of defaultSettings) {
-  await dbRun(
-    "INSERT INTO settings (`key`, `value`) VALUES (?, ?)",
-    [s.key, s.value]
-  );
-  }
+    for (const s of defaultSettings) {
+      await dbRun(
+        "INSERT INTO settings (`key`, `value`) VALUES (?, ?)",
+        [s.key, s.value]
+      );
+    }
   }
 
-  // 10. Seed Resume
   const resumeCount = await dbGet("SELECT COUNT(*) as count FROM resume");
   if (resumeCount.count === 0) {
     await dbRun("INSERT INTO resume (title, file_url, active) VALUES (?, ?, ?)", ["Habtamu_Simeneh_Resume.pdf", "/uploads/habtamu_resume.pdf", 1]);
   }
 
-  // 11. Seed Certificates
   const certCount = await dbGet("SELECT COUNT(*) as count FROM certificates");
   if (certCount.count === 0) {
     const defaultCerts = [
@@ -677,7 +615,6 @@ Always use **prepared statements** to shield against dangerous SQL Injection att
     }
   }
 
-  // 12. Seed Orbit Texts
   const orbitCount = await dbGet("SELECT COUNT(*) as count FROM orbit_texts");
   if (orbitCount.count === 0) {
     const defaultOrbitTexts = [
@@ -695,15 +632,10 @@ Always use **prepared statements** to shield against dangerous SQL Injection att
 
 async function runMigrations() {
   try {
-    // Clean up old unsplash values
     await dbRun("UPDATE settings SET value = '' WHERE `key` = 'profile_image' AND value LIKE '%unsplash.com%'");
     await dbRun("UPDATE users SET avatar_url = '' WHERE username = 'Habtamu simeneh' AND avatar_url LIKE '%unsplash.com%'");
-
-    // Enforce default password
     const hashedPassword = bcrypt.hashSync("Habtish2121", 10);
     await dbRun("UPDATE users SET password = ? WHERE username = ?", [hashedPassword, "Habtamu simeneh"]);
-
-    // Fix certificate links
     await dbRun("UPDATE certificates SET credential_url = 'https://academy.oracle.com' WHERE credential_url = 'https://oracle.com/verify/1234' OR credential_url IS NULL OR credential_url = ''");
     await dbRun("UPDATE certificates SET credential_url = 'https://www.alxafrica.com' WHERE credential_url = 'https://alx.com/verify/5678'");
     console.log("[Database] Migrations run successfully!");
@@ -805,32 +737,32 @@ app.put("/api/auth/profile", authenticateToken, async (req: any, res) => {
     }
 
     if (avatar_url !== undefined) {
-  await dbRun(
-    "INSERT INTO settings (`key`, `value`) VALUES ('profile_image', ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
-    [avatar_url]
-  );
-}
+      await dbRun(
+        "INSERT INTO settings (`key`, `value`) VALUES ('profile_image', ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
+        [avatar_url]
+      );
+    }
 
-if (about_image !== undefined) {
-  await dbRun(
-    "INSERT INTO settings (`key`, `value`) VALUES ('about_image', ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
-    [about_image]
-  );
-}
+    if (about_image !== undefined) {
+      await dbRun(
+        "INSERT INTO settings (`key`, `value`) VALUES ('about_image', ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
+        [about_image]
+      );
+    }
 
-if (name) {
-  await dbRun(
-    "INSERT INTO settings (`key`, `value`) VALUES ('site_name', ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
-    [name]
-  );
-}
+    if (name) {
+      await dbRun(
+        "INSERT INTO settings (`key`, `value`) VALUES ('site_name', ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
+        [name]
+      );
+    }
 
-if (bio) {
-  await dbRun(
-    "INSERT INTO settings (`key`, `value`) VALUES ('site_subtitle', ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
-    [bio]
-  );
-}
+    if (bio) {
+      await dbRun(
+        "INSERT INTO settings (`key`, `value`) VALUES ('site_subtitle', ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
+        [bio]
+      );
+    }
 
     res.json({ message: "Profile updated successfully" });
   } catch (error: any) {
@@ -1139,7 +1071,6 @@ app.get("/api/blogs", async (req, res) => {
 
 app.get("/api/blogs/:id", async (req, res) => {
   try {
-    // Increment view counter on read
     await dbRun("UPDATE blogs SET views = views + 1 WHERE id = ?", [req.params.id]);
     const blog = await dbGet("SELECT * FROM blogs WHERE id = ?", [req.params.id]);
     if (!blog) {
@@ -1192,7 +1123,7 @@ app.delete("/api/blogs/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// MESSAGES (CONTACT FORM) API
+// MESSAGES
 app.get("/api/messages", authenticateToken, async (req, res) => {
   try {
     const messages = await dbQuery("SELECT * FROM messages ORDER BY id DESC");
@@ -1242,7 +1173,7 @@ app.delete("/api/messages/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// SETTINGS API
+// SETTINGS
 app.get("/api/settings", async (req, res) => {
   try {
     const rawSettings = await dbQuery("SELECT * FROM settings");
@@ -1259,19 +1190,19 @@ app.get("/api/settings", async (req, res) => {
 app.put("/api/settings", authenticateToken, async (req, res) => {
   const settings = req.body;
   try {
-   for (const [key, val] of Object.entries(settings)) {
-  await dbRun(
-    "INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
-    [key, String(val)]
-  );
-}
+    for (const [key, val] of Object.entries(settings)) {
+      await dbRun(
+        "INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
+        [key, String(val)]
+      );
+    }
     res.json({ message: "Settings updated successfully" });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// CERTIFICATES CRUD
+// CERTIFICATES
 app.get("/api/certificates", async (req, res) => {
   try {
     const certs = await dbQuery("SELECT * FROM certificates ORDER BY issue_date DESC");
@@ -1319,7 +1250,7 @@ app.delete("/api/certificates/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// GALLERY CRUD
+// GALLERY
 app.get("/api/gallery", async (req, res) => {
   try {
     const items = await dbQuery("SELECT * FROM gallery ORDER BY id DESC");
@@ -1367,7 +1298,7 @@ app.delete("/api/gallery/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// ORBIT TEXTS CRUD
+// ORBIT TEXTS
 app.get("/api/orbit-texts", async (req, res) => {
   try {
     const items = await dbQuery("SELECT * FROM orbit_texts ORDER BY id ASC");
@@ -1412,7 +1343,7 @@ app.delete("/api/orbit-texts/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// RESUME CRUD
+// RESUME
 app.get("/api/resume", async (req, res) => {
   try {
     const items = await dbQuery("SELECT * FROM resume ORDER BY active DESC, id DESC");
@@ -1466,17 +1397,17 @@ app.delete("/api/resume/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// Cloudinary configuration
+// ==========================================
+// CLOUDINARY STORAGE SETUP (FIXED)
+// ==========================================
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dh99jg50',
   api_key: process.env.CLOUDINARY_API_KEY || '141979696587613',
   api_secret: process.env.CLOUDINARY_API_SECRET || 'AVnw-oYqC4juRGYphk5gSynwpqo',
 });
 
-// Cloudinary Storage
-// @ts-ignore
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
+const storage = multerStorageCloudinary({
+  cloudinary,
   params: {
     folder: 'habtamu_portfolio',
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
@@ -1485,7 +1416,7 @@ const storage = new CloudinaryStorage({
 });
 
 const upload = multer({
-  storage,
+  storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|doc|docx/;
@@ -1504,9 +1435,7 @@ app.post("/api/upload", authenticateToken, upload.single("file"), (req: any, res
   if (!req.file) {
     return res.status(400).json({ error: "No file was uploaded or file type is invalid" });
   }
-  
   const fileUrl = req.file.path || (req.file as any).url;
-  
   res.json({
     message: "File uploaded successfully!",
     fileUrl: fileUrl,
@@ -1516,7 +1445,7 @@ app.post("/api/upload", authenticateToken, upload.single("file"), (req: any, res
   });
 });
 
-// STATS ENDPOINT FOR DASHBOARD OVERVIEW
+// STATS ENDPOINT
 app.get("/api/stats", authenticateToken, async (req, res) => {
   try {
     const projects = await dbGet("SELECT COUNT(*) as count FROM projects");
@@ -1543,10 +1472,8 @@ app.get("/api/stats", authenticateToken, async (req, res) => {
 
 // VITE MIDDLEWARE SETUP & STARTUP SEQUENCE
 async function startServer() {
-  // 1. Initialize DB Driver (SQLite or MySQL)
   await initDb();
 
-  // 2. Provision Schema Tables (SQLite or MySQL)
   try {
     await dbExec(SCHEMA_SQL);
     console.log("[Database] Schema check completed successfully.");
@@ -1554,21 +1481,18 @@ async function startServer() {
     console.error("[Database] Error creating schema tables:", err.message);
   }
 
-  // 3. Seed Default Records
   try {
     await seedDatabase();
   } catch (err: any) {
     console.error("[Database] Error seeding database:", err.message);
   }
 
-  // 4. Run Migrations & Corrections
   try {
     await runMigrations();
   } catch (err: any) {
     console.error("[Database] Error running database migrations:", err.message);
   }
 
-  // 5. Mount Vite middleware for SPA
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -1605,4 +1529,3 @@ async function startServer() {
 }
 
 startServer();
-
