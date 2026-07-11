@@ -8,6 +8,8 @@ import mysql from "mysql2/promise";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import multer from "multer";
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { createServer as createViteServer } from "vite";
 
 const app = express();
@@ -1480,16 +1482,52 @@ app.delete("/api/resume/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// FILE UPLOAD ENDPOINT (ADMIN)
+// Cloudinary አዘጋጅ
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Cloudinary Storage አዘጋጅ
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'habtamu_portfolio',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
+    transformation: [
+      { width: 800, height: 800, crop: 'limit' }
+    ]
+  } as any,
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|doc|docx/;
+    const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mime = allowedTypes.test(file.mimetype);
+    if (ext && mime) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only images and documents are allowed"));
+    }
+  },
+});
+
+// FILE UPLOAD ENDPOINT (UPDATED WITH CLOUDINARY)
 app.post("/api/upload", authenticateToken, upload.single("file"), (req: any, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file was uploaded or file type is invalid" });
   }
-  const fileUrl = `/uploads/${req.file.filename}`;
+  
+  const fileUrl = req.file.path || (req.file as any).url;
+  
   res.json({
     message: "File uploaded successfully!",
-    fileUrl,
-    filename: req.file.filename,
+    fileUrl: fileUrl,
+    filename: req.file.filename || (req.file as any).public_id,
     size: req.file.size,
     mimetype: req.file.mimetype,
   });
