@@ -14,7 +14,7 @@ export default function Projects() {
   const [isWebDropdownOpen, setIsWebDropdownOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedGalleryItem, setSelectedGalleryItem] = useState(null);
-  const [activeTab, setActiveTab] = useState("projects"); // "projects" or "gallery"
+  const [activeTab, setActiveTab] = useState("projects");
   const [activeGalleryCategory, setActiveGalleryCategory] = useState("All");
   const location = useLocation();
 
@@ -66,7 +66,6 @@ export default function Projects() {
   const getDevWorkType = (proj) => {
     const cat = proj.category.toLowerCase();
     
-    // Explicit override checks for direct category selections
     if (
       cat === "full-stack" || 
       cat === "full stack" ||
@@ -170,30 +169,30 @@ export default function Projects() {
   };
 
   return (
-    <div className="relative min-h-screen bg-white dark:bg-[#050505] text-gray-900 dark:text-white pt-28 pb-16 overflow-hidden transition-colors duration-300">
+    <div className="relative min-h-screen bg-white dark:bg-[#050505] text-gray-900 dark:text-white pt-24 pb-16 overflow-hidden transition-colors duration-300">
       
       {/* Background glow elements */}
       <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gold-500/5 rounded-full blur-[120px] bg-pulse-glow" />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10 flex flex-col gap-8">
+      <div className="max-w-7xl mx-auto px-6 relative z-10 flex flex-col gap-6">
         
-        {/* Page Title */}
+        {/* Page Title - የቀነሰ ክፍተት */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5 }}
           className="text-center max-w-xl mx-auto"
         >
           <span className="text-xs uppercase font-mono tracking-widest text-gold-600 dark:text-gold-500 font-semibold block mb-2">Relational Portfolio Showcase</span>
-          <h2 className="font-serif text-3xl sm:text-5xl font-bold tracking-wide text-gray-900 dark:text-white">
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-wide text-gray-900 dark:text-white">
             Projects <span className="text-gold-500">Database</span>
           </h2>
           <div className="w-16 h-1 bg-gold-500 mx-auto mt-4 rounded" />
         </motion.div>
 
-        {/* Tab Switcher */}
-        <div className="flex justify-center gap-6 border-b border-gray-100 dark:border-white/5 pb-2 max-w-md mx-auto w-full mb-4">
+        {/* Tab Switcher - የቀነሰ ክፍተት */}
+        <div className="flex justify-center gap-6 border-b border-gray-100 dark:border-white/5 pb-2 max-w-md mx-auto w-full">
           <button
             onClick={() => {
               setActiveTab("projects");
@@ -224,13 +223,13 @@ export default function Projects() {
 
         {activeTab === "projects" ? (
           <>
-            {/* Filter & Search Bar Row */}
+            {/* Filter & Search Bar Row - የቀነሰ ክፍተት */}
             <motion.div
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="flex flex-col md:flex-row gap-4 items-center justify-between pt-4 max-w-5xl mx-auto w-full"
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="flex flex-col md:flex-row gap-3 items-center justify-between pt-2 max-w-5xl mx-auto w-full"
             >
               {/* Categories */}
               <div className="flex flex-wrap gap-1.5 justify-center md:justify-start items-center">
@@ -255,7 +254,6 @@ export default function Projects() {
                         <AnimatePresence>
                           {isWebDropdownOpen && (
                             <>
-                              {/* Close backdrop click interceptor */}
                               <div 
                                 className="fixed inset-0 z-30" 
                                 onClick={() => setIsWebDropdownOpen(false)} 
@@ -329,9 +327,9 @@ export default function Projects() {
               </div>
             </motion.div>
 
-            {/* Projects Grid */}
+            {/* Projects Grid - የቀነሰ የላይኛው ክፍተት */}
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full pt-3">
                 {[1, 2, 3].map((idx) => (
                   <div key={idx} className="aspect-video rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 animate-pulse" />
                 ))}
@@ -353,7 +351,7 @@ export default function Projects() {
                 }}
                 initial="hidden"
                 animate="show"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full pt-4"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full pt-3"
               >
                 <AnimatePresence mode="popLayout">
                   {filteredProjects.map((proj) => {
@@ -380,38 +378,38 @@ export default function Projects() {
                         onClick={() => setSelectedProject(proj)}
                         className="rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 overflow-hidden group cursor-pointer hover-gold-glow relative flex flex-col h-full shadow-sm dark:shadow-none"
                       >
-                      {/* Category overlay label */}
-                      <span className="absolute top-4 left-4 z-20 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md border border-gold-500/20 text-[9px] font-mono uppercase tracking-widest text-gold-500">
-                        {proj.category}
-                      </span>
+                        {/* Category overlay label */}
+                        <span className="absolute top-4 left-4 z-20 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md border border-gold-500/20 text-[9px] font-mono uppercase tracking-widest text-gold-500">
+                          {proj.category}
+                        </span>
 
-                      {/* Project Image Panel */}
-                      <div className="aspect-video w-full overflow-hidden border-b border-gray-200 dark:border-white/10 relative">
-                        <img
-                          src={proj.image_url || "https://images.unsplash.com/photo-1557821552-17105176677c?auto=format&fit=crop&q=80&w=800"}
-                          alt={proj.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 filter brightness-95"
-                        />
-                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="px-4 py-2 rounded-full bg-gold-500 text-black text-xs font-mono tracking-widest uppercase font-bold shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                            View Spec Sheets
-                          </span>
+                        {/* Project Image Panel */}
+                        <div className="aspect-video w-full overflow-hidden border-b border-gray-200 dark:border-white/10 relative">
+                          <img
+                            src={proj.image_url || "https://images.unsplash.com/photo-1557821552-17105176677c?auto=format&fit=crop&q=80&w=800"}
+                            alt={proj.title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 filter brightness-95"
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="px-4 py-2 rounded-full bg-gold-500 text-black text-xs font-mono tracking-widest uppercase font-bold shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                              View Spec Sheets
+                            </span>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Details Panel */}
-                      <div className="p-5 text-left flex flex-col gap-2 flex-1">
-                        <h4 className="font-serif text-lg font-bold text-gray-900 dark:text-white leading-tight group-hover:text-gold-600 dark:group-hover:text-gold-400 transition-colors flex items-center gap-2">
-                          <Icon className="w-4 h-4 text-gold-500 shrink-0" />
-                          <span>{proj.title}</span>
-                        </h4>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3">
-                          {proj.description}
-                        </p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                        {/* Details Panel */}
+                        <div className="p-5 text-left flex flex-col gap-2 flex-1">
+                          <h4 className="font-serif text-lg font-bold text-gray-900 dark:text-white leading-tight group-hover:text-gold-600 dark:group-hover:text-gold-400 transition-colors flex items-center gap-2">
+                            <Icon className="w-4 h-4 text-gold-500 shrink-0" />
+                            <span>{proj.title}</span>
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3">
+                            {proj.description}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </motion.div>
             )}
@@ -420,11 +418,11 @@ export default function Projects() {
           <>
             {/* Media Gallery Filters & Search Bar Row */}
             <motion.div
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="flex flex-col md:flex-row gap-4 items-center justify-between pt-4 max-w-5xl mx-auto w-full"
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="flex flex-col md:flex-row gap-3 items-center justify-between pt-2 max-w-5xl mx-auto w-full"
             >
               {/* Gallery Categories */}
               <div className="flex flex-wrap gap-1.5 justify-center md:justify-start items-center">
@@ -456,9 +454,9 @@ export default function Projects() {
               </div>
             </motion.div>
 
-            {/* Media Gallery Grid */}
+            {/* Media Gallery Grid - የቀነሰ የላይኛው ክፍተት */}
             {galleryLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full pt-3">
                 {[1, 2, 3].map((idx) => (
                   <div key={idx} className="aspect-video rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 animate-pulse" />
                 ))}
@@ -480,7 +478,7 @@ export default function Projects() {
                 }}
                 initial="hidden"
                 animate="show"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full pt-4"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full pt-3"
               >
                 <AnimatePresence mode="popLayout">
                   {filteredGallery.map((item, index) => (
@@ -534,7 +532,6 @@ export default function Projects() {
         <AnimatePresence>
           {selectedProject && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 dark:bg-black/90 backdrop-blur-md">
-              {/* Overlay background trigger close */}
               <div className="absolute inset-0" onClick={() => setSelectedProject(null)} />
               
               <motion.div
@@ -543,7 +540,6 @@ export default function Projects() {
                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
                 className="max-w-3xl w-full bg-white dark:bg-[#0c0c0c] rounded-2xl border border-gray-200 dark:border-gold-500/20 overflow-hidden relative z-10 max-h-[90vh] overflow-y-auto shadow-2xl"
               >
-                {/* Close Button */}
                 <button
                   onClick={() => setSelectedProject(null)}
                   className="absolute top-4 right-4 z-20 p-1.5 rounded-full bg-black/85 border border-white/10 hover:border-gold-500 transition-colors text-gray-400 hover:text-white"
@@ -551,7 +547,6 @@ export default function Projects() {
                   <X className="w-5 h-5" />
                 </button>
 
-                {/* Banner image */}
                 <div className="aspect-video sm:aspect-[2/1] w-full relative">
                   <img
                     src={selectedProject.image_url || "https://images.unsplash.com/photo-1557821552-17105176677c?auto=format&fit=crop&q=80&w=800"}
@@ -560,13 +555,11 @@ export default function Projects() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#0c0c0c] via-transparent to-transparent" />
                   
-                  {/* Category */}
                   <span className="absolute bottom-6 left-6 px-3 py-1.5 rounded bg-gold-500 text-black text-[10px] font-mono uppercase tracking-widest font-extrabold">
                     {selectedProject.category}
                   </span>
                 </div>
 
-                {/* Content */}
                 <div className="p-6 sm:p-8 text-left flex flex-col gap-6">
                   <div>
                     <h3 className="font-serif text-2xl sm:text-3.5xl font-bold text-gray-900 dark:text-white mb-2">
@@ -586,7 +579,6 @@ export default function Projects() {
                     </p>
                   </div>
 
-                  {/* Actions Links */}
                   <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-200 dark:border-white/5 mt-2">
                     {selectedProject.github_link && (
                       <a
@@ -630,7 +622,6 @@ export default function Projects() {
                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
                 className="max-w-4xl w-full bg-white dark:bg-[#0c0c0c] rounded-2xl border border-gray-200 dark:border-gold-500/20 overflow-hidden relative z-10 max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col"
               >
-                {/* Close Button */}
                 <button
                   onClick={() => setSelectedGalleryItem(null)}
                   className="absolute top-4 right-4 z-20 p-1.5 rounded-full bg-black/80 border border-white/10 hover:border-gold-500 transition-colors text-gray-400 hover:text-white cursor-pointer"
@@ -638,7 +629,6 @@ export default function Projects() {
                   <X className="w-5 h-5" />
                 </button>
 
-                {/* Lightbox Image Container */}
                 <div className="w-full h-auto max-h-[70vh] overflow-hidden bg-black flex items-center justify-center relative">
                   <img
                     src={selectedGalleryItem.image_url}
@@ -651,7 +641,6 @@ export default function Projects() {
                   </span>
                 </div>
 
-                {/* Details Panel */}
                 <div className="p-6 text-left bg-white dark:bg-[#0c0c0c]">
                   <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                     {selectedGalleryItem.title}
