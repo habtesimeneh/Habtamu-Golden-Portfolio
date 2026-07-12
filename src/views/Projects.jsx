@@ -533,7 +533,7 @@ export default function Projects() {
                 {/* ============================================================ */}
                 <AnimatePresence>
                     {selectedProject && (
-                        <div className="fixed inset-0  top-2 z-9999 flex items-center justify-center p-6 bg-black/60 dark:bg-black/90 backdrop-blur-md">
+                        <div className="fixed inset-0 z-9999 flex items-start justify-center p-6 pt-24 bg-black/60 dark:bg-black/90 backdrop-blur-md">
                             {/* Overlay background trigger close */}
                             <div className="absolute inset-0" onClick={() => setSelectedProject(null)} />
 
@@ -623,7 +623,7 @@ export default function Projects() {
                 {/* ============================================================ */}
                 <AnimatePresence>
                     {selectedGalleryItem && (
-                        <div className="fixed inset-0 z-9999 flex items-center justify-center p-6 bg-black/80 dark:bg-black/95 backdrop-blur-md">
+                        <div className="fixed inset-0 z-9999 flex items-start justify-center p-6 pt-24 bg-black/80 dark:bg-black/95 backdrop-blur-md">
                             <div className="absolute inset-0" onClick={() => setSelectedGalleryItem(null)} />
 
                             <motion.div
