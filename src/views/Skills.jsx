@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Sliders, Cpu, Database, Terminal, ShieldAlert, X, CheckCircle2, Info, Sparkles } from "lucide-react";
+import { fetchJson } from "../lib/api.js";
 
 const SKILL_DETAILS_MAP = {
   react: {
@@ -176,16 +177,8 @@ export default function Skills() {
   }, []);
 
   const fetchSkills = async () => {
-    try {
-      const res = await fetch("/api/skills");
-      if (res.ok) {
-        setSkills(await res.json());
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    setSkills(await fetchJson("/api/skills", []));
+    setLoading(false);
   };
 
   const categories = ["All", "Frontend", "Backend", "Database", "Tools"];

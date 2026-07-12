@@ -4,6 +4,8 @@ import Navbar from "./components/Navbar.jsx";
 import Footer from "./components/Footer.jsx";
 import { ToastContainer, toast } from "./components/Toast.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import { apiGet } from "./lib/api.js";
+import { getToken, setToken as storeToken, clearToken } from "./lib/auth.js";
 
 // Sub-views
 import Home from "./views/Home.jsx";
@@ -26,7 +28,7 @@ function ScrollToTop() {
 }
 
 export default function App() {
-  const [token, setToken] = useState(localStorage.getItem("admin_token") || "");
+  const [token, setToken] = useState(getToken());
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -37,12 +39,9 @@ export default function App() {
 
   const validateSession = async () => {
     try {
-      const res = await fetch("/api/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const userData = await res.json();
-        setUser(userData);
+      const { ok, data } = await apiGet("/api/auth/me", token);
+      if (ok) {
+        setUser(data);
       } else {
         // Token is invalid/expired
         handleLogout();
@@ -53,13 +52,13 @@ export default function App() {
   };
 
   const handleLogin = (newToken, userData) => {
-    localStorage.setItem("admin_token", newToken);
+    storeToken(newToken);
     setToken(newToken);
     setUser(userData);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_token");
+    clearToken();
     setToken("");
     setUser(null);
     toast("Signed out securely.", "info");

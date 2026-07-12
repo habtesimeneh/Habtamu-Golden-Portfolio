@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Calendar, GraduationCap, Briefcase, Award, Download, CheckCircle, ArrowRight, X, ShieldCheck, Check, Link2, Fingerprint, ExternalLink } from "lucide-react";
+import { fetchJson } from "../lib/api.js";
 
 export default function About() {
   const [education, setEducation] = useState([]);
@@ -20,37 +21,26 @@ export default function About() {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [eduRes, expRes, certRes, resumeRes, settingsRes] = await Promise.all([
-          fetch("/api/education"),
-          fetch("/api/experience"),
-          fetch("/api/certificates"),
-          fetch("/api/resume"),
-          fetch("/api/settings"),
-        ]);
-        if (eduRes.ok) setEducation(await eduRes.json());
-        if (expRes.ok) setExperience(await expRes.json());
-        if (certRes.ok) setCertificates(await certRes.json());
-        if (resumeRes.ok) {
-          const resumes = await resumeRes.json();
-          const activeResume = resumes.find((r) => r.active === 1);
-          if (activeResume) {
-            setResumeUrl(activeResume.file_url);
-          }
-        }
-        if (settingsRes.ok) {
-          const settings = await settingsRes.json();
-          if (settings.about_image) {
-            setProfileImage(settings.about_image);
-          } else if (settings.profile_image) {
-            setProfileImage(settings.profile_image);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching about page data:", err);
-      } finally {
-        setLoading(false);
+      const [edu, exp, certs, resumes, settings] = await Promise.all([
+        fetchJson("/api/education", []),
+        fetchJson("/api/experience", []),
+        fetchJson("/api/certificates", []),
+        fetchJson("/api/resume", []),
+        fetchJson("/api/settings", {}),
+      ]);
+      setEducation(edu);
+      setExperience(exp);
+      setCertificates(certs);
+      const activeResume = resumes.find((r) => r.active === 1);
+      if (activeResume) {
+        setResumeUrl(activeResume.file_url);
       }
+      if (settings.about_image) {
+        setProfileImage(settings.about_image);
+      } else if (settings.profile_image) {
+        setProfileImage(settings.profile_image);
+      }
+      setLoading(false);
     };
     fetchData();
   }, []);

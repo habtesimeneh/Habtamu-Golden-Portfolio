@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Github, Linkedin, Twitter,Instagram, Mail } from "lucide-react";
+import { fetchJson } from "../lib/api.js";
 
 export default function Footer({ isAdmin }) {
   const currentYear = new Date().getFullYear();
@@ -15,14 +16,9 @@ social_github: "https://github.com/habtamu",
 
   useEffect(() => {
     const fetchSettings = async () => {
-      try {
-        const res = await fetch("/api/settings");
-        if (res.ok) {
-          const data = await res.json();
-          setSettings((prev) => ({ ...prev, ...data }));
-        }
-      } catch (err) {
-        console.error("Error fetching footer settings:", err);
+      const data = await fetchJson("/api/settings");
+      if (data) {
+        setSettings((prev) => ({ ...prev, ...data }));
       }
     };
     fetchSettings();

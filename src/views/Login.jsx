@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Lock, User, Eye, EyeOff, Loader2, ArrowLeft, ShieldAlert, Terminal, KeyRound, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "../components/Toast.jsx";
+import { apiPost } from "../lib/api.js";
 
 export default function Login({ onLogin }) {
   const navigate = useNavigate();
@@ -43,20 +44,14 @@ export default function Login({ onLogin }) {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
+      const { ok, data } = await apiPost("/api/auth/login", { username, password });
 
-      if (res.ok) {
-        const data = await res.json();
+      if (ok) {
         onLogin(data.token, data.user);
         toast("Access granted! Authenticated securely.", "success");
         navigate("/admin");
       } else {
-        const err = await res.json();
-        toast(err.error || "Authentication failed. Invalid keys.", "error");
+        toast(data?.error || "Authentication failed. Invalid keys.", "error");
       }
     } catch (error) {
       toast("SQL Server handshake failed", "error");

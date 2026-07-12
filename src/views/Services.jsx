@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import * as Icons from "lucide-react";
+import { fetchJson } from "../lib/api.js";
 
 export default function Services() {
   const [services, setServices] = useState([]);
@@ -9,18 +10,13 @@ export default function Services() {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [servicesRes, testimonialsRes] = await Promise.all([
-          fetch("/api/services"),
-          fetch("/api/testimonials"),
-        ]);
-        if (servicesRes.ok) setServices(await servicesRes.json());
-        if (testimonialsRes.ok) setTestimonials(await testimonialsRes.json());
-      } catch (err) {
-        console.error("Error loading services page metrics:", err);
-      } finally {
-        setLoading(false);
-      }
+      const [servicesData, testimonialsData] = await Promise.all([
+        fetchJson("/api/services", []),
+        fetchJson("/api/testimonials", []),
+      ]);
+      setServices(servicesData);
+      setTestimonials(testimonialsData);
+      setLoading(false);
     };
     fetchData();
   }, []);
