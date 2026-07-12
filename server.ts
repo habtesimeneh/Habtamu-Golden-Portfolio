@@ -61,7 +61,7 @@ const upload = multer({
     if (ext && mime) {
       cb(null, true);
     } else {
-      cb(new Error("Only images and documents are allowed"));
+      cb(null, false);
     }
   },
 });
@@ -1505,6 +1505,21 @@ async function startServer() {
     });
   }
 
+  // Global error handler: ensures errors from middleware (e.g. Multer file
+  // size/type rejections) and thrown route errors are propagated to the client
+  // as JSON instead of being swallowed or returned as default HTML.
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (res.headersSent) {
+      return next(err);
+    }
+    console.error("[Server] Unhandled request error:", err);
+    if (err instanceof multer.MulterError) {
+      const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+      return res.status(status).json({ error: err.message });
+    }
+    res.status(err.status || 500).json({ error: err.message || "Internal server error" });
+  });
+
   const tryListen = (port: number) => {
     app.listen(port, "0.0.0.0", () => {
       console.log(`\n======================================================`);
@@ -1526,4 +1541,7 @@ async function startServer() {
   tryListen(PORT);
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error("[Server] Fatal error during startup:", err);
+  process.exit(1);
+});

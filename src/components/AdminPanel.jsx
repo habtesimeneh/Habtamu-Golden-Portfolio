@@ -126,6 +126,17 @@ export default function AdminPanel({ token, onLogout }) {
   const [editingId, setEditingId] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
 
+  // Extracts a server-provided error message from a failed response so API
+  // errors are surfaced to the admin instead of being silently swallowed.
+  const errorMessageFrom = async (res, fallback) => {
+    try {
+      const data = await res.json();
+      return data?.error || fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   // Load Admin Profile and initial values
   useEffect(() => {
     fetchProfile();
@@ -310,6 +321,8 @@ export default function AdminPanel({ token, onLogout }) {
         toast("Project deleted successfully", "success");
         fetchDataForTab("projects");
         fetchStats();
+      } else {
+        toast(await errorMessageFrom(res, "Error deleting project"), "error");
       }
     } catch (err) {
       toast("Deletion failed", "error");
@@ -339,6 +352,8 @@ export default function AdminPanel({ token, onLogout }) {
         setEditingId(null);
         fetchDataForTab("skills");
         fetchStats();
+      } else {
+        toast(await errorMessageFrom(res, "Error saving skill"), "error");
       }
     } catch (err) {
       toast("Request failed", "error");
@@ -356,6 +371,8 @@ export default function AdminPanel({ token, onLogout }) {
         toast("Skill deleted", "success");
         fetchDataForTab("skills");
         fetchStats();
+      } else {
+        toast(await errorMessageFrom(res, "Error deleting skill"), "error");
       }
     } catch (err) {
       toast("Deletion failed", "error");
@@ -385,6 +402,8 @@ export default function AdminPanel({ token, onLogout }) {
         setEditingId(null);
         fetchDataForTab("blogs");
         fetchStats();
+      } else {
+        toast(await errorMessageFrom(res, "Error saving blog"), "error");
       }
     } catch (err) {
       toast("Request failed", "error");
@@ -402,6 +421,8 @@ export default function AdminPanel({ token, onLogout }) {
         toast("Blog deleted", "success");
         fetchDataForTab("blogs");
         fetchStats();
+      } else {
+        toast(await errorMessageFrom(res, "Error deleting blog"), "error");
       }
     } catch (err) {
       toast("Deletion failed", "error");
@@ -438,6 +459,8 @@ export default function AdminPanel({ token, onLogout }) {
         setEditingId(null);
         fetchDataForTab("testimonials");
         fetchStats();
+      } else {
+        toast(await errorMessageFrom(res, "Error saving testimonial"), "error");
       }
     } catch (err) {
       toast("Request failed", "error");
@@ -455,6 +478,8 @@ export default function AdminPanel({ token, onLogout }) {
         toast("Testimonial deleted", "success");
         fetchDataForTab("testimonials");
         fetchStats();
+      } else {
+        toast(await errorMessageFrom(res, "Error deleting testimonial"), "error");
       }
     } catch (err) {
       toast("Deletion failed", "error");
@@ -483,6 +508,8 @@ export default function AdminPanel({ token, onLogout }) {
         setGalleryForm({ id: null, title: "", image_url: "", category: "General" });
         setEditingId(null);
         fetchDataForTab("gallery");
+      } else {
+        toast(await errorMessageFrom(res, "Error saving gallery item"), "error");
       }
     } catch (err) {
       toast("Request failed", "error");
@@ -499,6 +526,8 @@ export default function AdminPanel({ token, onLogout }) {
       if (res.ok) {
         toast("Gallery item deleted", "success");
         fetchDataForTab("gallery");
+      } else {
+        toast(await errorMessageFrom(res, "Error deleting gallery item"), "error");
       }
     } catch (err) {
       toast("Deletion failed", "error");
@@ -528,6 +557,8 @@ export default function AdminPanel({ token, onLogout }) {
         setEditingId(null);
         fetchDataForTab("certificates");
         fetchStats();
+      } else {
+        toast(await errorMessageFrom(res, "Error saving certificate"), "error");
       }
     } catch (err) {
       toast("Request failed", "error");
@@ -545,6 +576,8 @@ export default function AdminPanel({ token, onLogout }) {
         toast("Certificate deleted successfully", "success");
         fetchDataForTab("certificates");
         fetchStats();
+      } else {
+        toast(await errorMessageFrom(res, "Error deleting certificate"), "error");
       }
     } catch (err) {
       toast("Deletion failed", "error");
@@ -591,6 +624,8 @@ export default function AdminPanel({ token, onLogout }) {
       if (res.ok) {
         toast("Orbit text deleted", "success");
         fetchDataForTab("orbit-texts");
+      } else {
+        toast(await errorMessageFrom(res, "Error deleting orbit text"), "error");
       }
     } catch (err) {
       toast("Deletion failed", "error");
@@ -630,6 +665,8 @@ export default function AdminPanel({ token, onLogout }) {
         }
         fetchDataForTab("messages");
         fetchStats();
+      } else {
+        toast(await errorMessageFrom(res, "Error deleting message"), "error");
       }
     } catch (err) {
       toast("Deletion failed", "error");
