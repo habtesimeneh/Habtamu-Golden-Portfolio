@@ -541,7 +541,7 @@ export default function Projects() {
                                 initial={{ opacity: 0, scale: 0.95, y: 15 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                                className="max-w-3xl w-full bg-white dark:bg-[#0c0c0c] rounded-2xl border border-gray-200 dark:border-gold-500/20 overflow-hidden relative z-10 max-h-[90vh] overflow-y-auto shadow-2xl"
+                                className="max-w-4xl w-full bg-white dark:bg-[#0c0c0c] rounded-2xl border border-gray-200 dark:border-gold-500/20 overflow-hidden relative z-10 max-h-[90vh] overflow-y-auto shadow-2xl"
                             >
                                 {/* Close Button */}
                                 <button
