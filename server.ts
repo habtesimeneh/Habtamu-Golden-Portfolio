@@ -70,13 +70,12 @@ const upload = multer({
 // DUAL DATABASE CONTEXT MANAGER (SQLITE + MYSQL)
 // ==========================================
 const DB_TYPE = process.env.DB_TYPE || "sqlite";
-console.log("process.env.DB_TYPE =", process.env.DB_TYPE);
-console.log("DB_TYPE =", DB_TYPE);
 const DB_HOST = process.env.DB_HOST || "localhost";
 const DB_PORT = Number(process.env.DB_PORT) || 3306;
 const DB_USER = process.env.DB_USER || "root";
 const DB_PASSWORD = process.env.DB_PASSWORD || "";
 const DB_NAME = process.env.DB_NAME || "habtamu_gold_portfolio";
+const DB_SSL = process.env.DB_SSL === "true";  // አዲስ ተለዋዋጭ
 
 let sqliteDb: any = null;
 let mysqlPool: any = null;
@@ -84,27 +83,22 @@ let mysqlPool: any = null;
 async function initDb() {
   if (DB_TYPE === "mysql") {
     console.log(`[Database] Connecting to MySQL server at ${DB_HOST}:${DB_PORT} as ${DB_USER}...`);
+    console.log(`[Database] SSL enabled: ${DB_SSL}`);
+
     try {
-      let caCert: Buffer | undefined;
-      try {
-        caCert = fs.readFileSync(path.join(process.cwd(), 'ca.pem'));
-        console.log("[Database] CA Certificate loaded successfully.");
-      } catch (err) {
-        console.warn("[Database] CA Certificate not found, using SSL without verification.");
-      }
+      // SSL ን በአካባቢው ላይ አታስገቡ
+      const sslConfig = DB_SSL ? {
+        rejectUnauthorized: false
+      } : undefined;  // MAMP ላይ SSL አያስፈልግም
 
       const adminConnection = await mysql.createConnection({
         host: DB_HOST,
         port: DB_PORT,
         user: DB_USER,
         password: DB_PASSWORD,
-        ssl: caCert ? {
-          ca: caCert,
-          rejectUnauthorized: true
-        } : {
-          rejectUnauthorized: false
-        }
+        ssl: sslConfig  // ለርቀት ብቻ
       });
+
       await adminConnection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
       await adminConnection.end();
 
@@ -114,20 +108,16 @@ async function initDb() {
         user: DB_USER,
         password: DB_PASSWORD,
         database: DB_NAME,
-        ssl: caCert ? {
-          ca: caCert,
-          rejectUnauthorized: true
-        } : {
-          rejectUnauthorized: false
-        },
+        ssl: sslConfig,   // ለርቀት ብቻ
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
         multipleStatements: true,
       });
-      console.log(`[Database] MySQL Connected successfully! Database Name: ${DB_NAME}`);
+
+      console.log(`✅ [Database] MySQL Connected successfully! Database Name: ${DB_NAME}`);
     } catch (err: any) {
-      console.error("[Database] Failed to connect to MySQL database! Falling back to SQLite.", err.message);
+      console.error("❌ [Database] Failed to connect to MySQL database! Falling back to SQLite.", err.message);
       setupSqliteFallback();
     }
   } else {
