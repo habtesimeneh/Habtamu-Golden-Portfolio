@@ -3,6 +3,7 @@ dotenv.config();
 import express from "express";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 import Database from "better-sqlite3";
 import mysql from "mysql2/promise";
 import jwt from "jsonwebtoken";
@@ -20,15 +21,39 @@ cloudinary.v2.config({
 
 const app = express();
 const PORT = Number(process.env.PORT || 9000);
-const JWT_SECRET = process.env.JWT_SECRET || "habtamu_gold_portfolio_secret_2026";
+
+// JWT signing secret. Never ship a hardcoded fallback: a known secret lets
+// anyone forge admin tokens. Require it in production; in development fall back
+// to a random per-process secret (tokens simply won't survive a restart).
+let JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  if (process.env.NODE_ENV === "production") {
+    console.error("[Security] JWT_SECRET is required in production. Refusing to start.");
+    process.exit(1);
+  }
+  JWT_SECRET = crypto.randomBytes(48).toString("hex");
+  console.warn("[Security] JWT_SECRET not set; generated an ephemeral development secret. Set JWT_SECRET in .env to keep sessions valid across restarts.");
+}
 
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Allowed cross-origin origins (comma-separated in ALLOWED_ORIGINS).
+// Empty means "same-origin only" — we never reflect a wildcard, which combined
+// with the Authorization header would let any site drive the admin API.
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 // Custom Security Headers & CORS
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+  }
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   res.header("X-Content-Type-Options", "nosniff");
@@ -338,7 +363,15 @@ const SCHEMA_SQL = `
 async function seedDatabase() {
   const userCount = await dbGet("SELECT COUNT(*) as count FROM users");
   if (userCount.count === 0) {
-    const hashedPassword = bcrypt.hashSync("Habtish2121", 10);
+    // Never bake a real admin password into source. Use ADMIN_PASSWORD when
+    // provided, otherwise generate a strong random one and print it once so
+    // the operator can log in and change it.
+    let adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) {
+      adminPassword = crypto.randomBytes(12).toString("base64url");
+      console.warn(`[Security] ADMIN_PASSWORD not set. Generated a temporary admin password (shown once): ${adminPassword}`);
+    }
+    const hashedPassword = bcrypt.hashSync(adminPassword, 10);
     await dbRun(
       `INSERT INTO users (username, password, name, email, bio, avatar_url)
        VALUES (?, ?, ?, ?, ?, ?)`,
@@ -634,8 +667,6 @@ async function runMigrations() {
   try {
     await dbRun("UPDATE settings SET value = '' WHERE `key` = 'profile_image' AND value LIKE '%unsplash.com%'");
     await dbRun("UPDATE users SET avatar_url = '' WHERE username = 'Habtamu simeneh' AND avatar_url LIKE '%unsplash.com%'");
-    const hashedPassword = bcrypt.hashSync("Habtish2121", 10);
-    await dbRun("UPDATE users SET password = ? WHERE username = ?", [hashedPassword, "Habtamu simeneh"]);
     await dbRun("UPDATE certificates SET credential_url = 'https://academy.oracle.com' WHERE credential_url = 'https://oracle.com/verify/1234' OR credential_url IS NULL OR credential_url = ''");
     await dbRun("UPDATE certificates SET credential_url = 'https://www.alxafrica.com' WHERE credential_url = 'https://alx.com/verify/5678'");
     console.log("[Database] Migrations run successfully!");
