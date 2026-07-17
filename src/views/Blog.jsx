@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Search, Calendar, Eye, ArrowLeft, BookOpen, X } from "lucide-react";
+import { fetchJson } from "../lib/api.js";
 
 export default function BlogView() {
   const [blogs, setBlogs] = useState([]);
@@ -16,32 +17,19 @@ export default function BlogView() {
   }, []);
 
   const fetchBlogs = async () => {
-    try {
-      const res = await fetch("/api/blogs");
-      if (res.ok) {
-        setBlogs(await res.json());
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    setBlogs(await fetchJson("/api/blogs", []));
+    setLoading(false);
   };
 
   const handleReadBlog = async (blogId) => {
-    try {
-      const res = await fetch(`/api/blogs/${blogId}`);
-      if (res.ok) {
-        const fullBlog = await res.json();
-        setSelectedBlog(fullBlog);
-        // Increment local view count for realism
-        setBlogs((prev) =>
-          prev.map((b) => (b.id === blogId ? { ...b, views: b.views + 1 } : b))
-        );
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    } catch (err) {
-      console.error(err);
+    const fullBlog = await fetchJson(`/api/blogs/${blogId}`);
+    if (fullBlog) {
+      setSelectedBlog(fullBlog);
+      // Increment local view count for realism
+      setBlogs((prev) =>
+        prev.map((b) => (b.id === blogId ? { ...b, views: b.views + 1 } : b))
+      );
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 

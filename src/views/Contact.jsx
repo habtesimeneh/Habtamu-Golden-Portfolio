@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Mail, Phone, MapPin, Send, Loader2, Check, Copy } from "lucide-react";
 import { toast } from "../components/Toast.jsx";
+import { apiPost } from "../lib/api.js";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -32,13 +33,9 @@ export default function Contact() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const { ok, data } = await apiPost("/api/messages", formData);
 
-      if (res.ok) {
+      if (ok) {
         toast("Message sent successfully!", "success");
         setSubmitted(true);
         setFormData({
@@ -48,8 +45,7 @@ export default function Contact() {
           message: "",
         });
       } else {
-        const err = await res.json();
-        toast(err.error || "Failed to submit message", "error");
+        toast(data?.error || "Failed to submit message", "error");
       }
     } catch (error) {
       toast("Network error. Please try again later.", "error");

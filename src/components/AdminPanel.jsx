@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "./Toast";
+import { apiGet, apiPut, apiRequest, apiDelete, uploadFile } from "../lib/api.js";
 
 export default function AdminPanel({ token, onLogout }) {
   const navigate = useNavigate();
@@ -135,11 +136,8 @@ export default function AdminPanel({ token, onLogout }) {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch("/api/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const user = await res.json();
+      const { ok, data: user } = await apiGet("/api/auth/me", token);
+      if (ok) {
         setAdminUser(user);
         setProfileForm({
           name: user.name || "",
@@ -160,11 +158,9 @@ export default function AdminPanel({ token, onLogout }) {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch("/api/stats", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        setStats(await res.json());
+      const { ok, data } = await apiGet("/api/stats", token);
+      if (ok) {
+        setStats(data);
       }
     } catch (err) {
       console.error(err);
@@ -175,35 +171,32 @@ export default function AdminPanel({ token, onLogout }) {
     setLoading(true);
     try {
       if (tab === "projects") {
-        const res = await fetch("/api/projects");
-        if (res.ok) setProjects(await res.json());
+        const { ok, data } = await apiGet("/api/projects");
+        if (ok) setProjects(data);
       } else if (tab === "skills") {
-        const res = await fetch("/api/skills");
-        if (res.ok) setSkills(await res.json());
+        const { ok, data } = await apiGet("/api/skills");
+        if (ok) setSkills(data);
       } else if (tab === "blogs") {
-        const res = await fetch("/api/blogs");
-        if (res.ok) setBlogs(await res.json());
+        const { ok, data } = await apiGet("/api/blogs");
+        if (ok) setBlogs(data);
       } else if (tab === "messages") {
-        const res = await fetch("/api/messages", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) setMessages(await res.json());
+        const { ok, data } = await apiGet("/api/messages", token);
+        if (ok) setMessages(data);
       } else if (tab === "testimonials") {
-        const res = await fetch("/api/testimonials");
-        if (res.ok) setTestimonials(await res.json());
+        const { ok, data } = await apiGet("/api/testimonials");
+        if (ok) setTestimonials(data);
       } else if (tab === "gallery") {
-        const res = await fetch("/api/gallery");
-        if (res.ok) setGallery(await res.json());
+        const { ok, data } = await apiGet("/api/gallery");
+        if (ok) setGallery(data);
       } else if (tab === "certificates") {
-        const res = await fetch("/api/certificates");
-        if (res.ok) setCertificates(await res.json());
+        const { ok, data } = await apiGet("/api/certificates");
+        if (ok) setCertificates(data);
       } else if (tab === "orbit-texts") {
-        const res = await fetch("/api/orbit-texts");
-        if (res.ok) setOrbitTexts(await res.json());
+        const { ok, data } = await apiGet("/api/orbit-texts");
+        if (ok) setOrbitTexts(data);
       } else if (tab === "settings") {
-        const res = await fetch("/api/settings");
-        if (res.ok) {
-          const data = await res.json();
+        const { ok, data } = await apiGet("/api/settings");
+        if (ok) {
           setCmsSettings({
             site_name: data.site_name || "",
             site_title: data.site_title || "",
@@ -232,23 +225,13 @@ export default function AdminPanel({ token, onLogout }) {
     if (!file) return;
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
+      const { ok, data } = await uploadFile(file, token);
+      if (ok) {
         onComplete(data.fileUrl);
         toast("File uploaded securely to MySQL file store", "success");
       } else {
-        const err = await res.json();
-        toast(err.error || "Upload failed", "error");
+        toast(data?.error || "Upload failed", "error");
       }
     } catch (error) {
       toast("Network error during file upload", "error");
@@ -258,26 +241,57 @@ export default function AdminPanel({ token, onLogout }) {
   };
 
   // --- CRUD ACTIONS ---
+  //
+  // Every entity below shares the same create/update and delete lifecycle, so
+  // it flows through these two helpers instead of hand-rolling the fetch,
+  // toast, form-reset and refetch dance for each one.
+  const saveEntity = async (path, tab, form, messages, resetForm, { refreshStats = true } = {}) => {
+    const isEdit = form.id !== null;
+    const url = isEdit ? `${path}/${form.id}` : path;
+    try {
+      const { ok } = await apiRequest(url, {
+        method: isEdit ? "PUT" : "POST",
+        body: form,
+        token,
+      });
+      if (ok) {
+        toast(isEdit ? messages.edit : messages.create, "success");
+        resetForm();
+        setEditingId(null);
+        fetchDataForTab(tab);
+        if (refreshStats) fetchStats();
+      } else {
+        toast(messages.error || "Request failed", "error");
+      }
+    } catch (err) {
+      toast(messages.error || "Request failed", "error");
+    }
+  };
+
+  const deleteEntity = async (path, tab, id, confirmMsg, successMsg, { refreshStats = true, onSuccess } = {}) => {
+    if (!confirm(confirmMsg)) return;
+    try {
+      const { ok } = await apiDelete(`${path}/${id}`, token);
+      if (ok) {
+        toast(successMsg, "success");
+        if (onSuccess) onSuccess();
+        fetchDataForTab(tab);
+        if (refreshStats) fetchStats();
+      }
+    } catch (err) {
+      toast("Deletion failed", "error");
+    }
+  };
 
   // 1. PROJECTS CRUD
   const saveProject = async (e) => {
     e.preventDefault();
-    const isEdit = projectForm.id !== null;
-    const url = isEdit ? `/api/projects/${projectForm.id}` : "/api/projects";
-    const method = isEdit ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(projectForm),
-      });
-
-      if (res.ok) {
-        toast(isEdit ? "Project updated in database!" : "Project created in database!", "success");
+    await saveEntity(
+      "/api/projects",
+      "projects",
+      projectForm,
+      { create: "Project created in database!", edit: "Project updated in database!", error: "Error saving project" },
+      () =>
         setProjectForm({
           id: null,
           title: "",
@@ -287,146 +301,50 @@ export default function AdminPanel({ token, onLogout }) {
           github_link: "",
           live_link: "",
           featured: false,
-        });
-        setEditingId(null);
-        fetchDataForTab("projects");
-        fetchStats();
-      } else {
-        toast("Error saving project", "error");
-      }
-    } catch (err) {
-      toast("Request failed", "error");
-    }
+        })
+    );
   };
 
-  const deleteProject = async (id) => {
-    if (!confirm("Are you sure you want to delete this project from SQL database?")) return;
-    try {
-      const res = await fetch(`/api/projects/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        toast("Project deleted successfully", "success");
-        fetchDataForTab("projects");
-        fetchStats();
-      }
-    } catch (err) {
-      toast("Deletion failed", "error");
-    }
-  };
+  const deleteProject = (id) =>
+    deleteEntity("/api/projects", "projects", id, "Are you sure you want to delete this project from SQL database?", "Project deleted successfully");
 
   // 2. SKILLS CRUD
   const saveSkill = async (e) => {
     e.preventDefault();
-    const isEdit = skillForm.id !== null;
-    const url = isEdit ? `/api/skills/${skillForm.id}` : "/api/skills";
-    const method = isEdit ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(skillForm),
-      });
-
-      if (res.ok) {
-        toast(isEdit ? "Skill updated!" : "Skill created!", "success");
-        setSkillForm({ id: null, name: "", category: "Frontend", percentage: 85 });
-        setEditingId(null);
-        fetchDataForTab("skills");
-        fetchStats();
-      }
-    } catch (err) {
-      toast("Request failed", "error");
-    }
+    await saveEntity(
+      "/api/skills",
+      "skills",
+      skillForm,
+      { create: "Skill created!", edit: "Skill updated!" },
+      () => setSkillForm({ id: null, name: "", category: "Frontend", percentage: 85 })
+    );
   };
 
-  const deleteSkill = async (id) => {
-    if (!confirm("Delete this skill from DB?")) return;
-    try {
-      const res = await fetch(`/api/skills/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        toast("Skill deleted", "success");
-        fetchDataForTab("skills");
-        fetchStats();
-      }
-    } catch (err) {
-      toast("Deletion failed", "error");
-    }
-  };
+  const deleteSkill = (id) => deleteEntity("/api/skills", "skills", id, "Delete this skill from DB?", "Skill deleted");
 
   // 3. BLOGS CRUD
   const saveBlog = async (e) => {
     e.preventDefault();
-    const isEdit = blogForm.id !== null;
-    const url = isEdit ? `/api/blogs/${blogForm.id}` : "/api/blogs";
-    const method = isEdit ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(blogForm),
-      });
-
-      if (res.ok) {
-        toast(isEdit ? "Blog updated!" : "Blog published!", "success");
-        setBlogForm({ id: null, title: "", category: "Development", image_url: "", content: "" });
-        setEditingId(null);
-        fetchDataForTab("blogs");
-        fetchStats();
-      }
-    } catch (err) {
-      toast("Request failed", "error");
-    }
+    await saveEntity(
+      "/api/blogs",
+      "blogs",
+      blogForm,
+      { create: "Blog published!", edit: "Blog updated!" },
+      () => setBlogForm({ id: null, title: "", category: "Development", image_url: "", content: "" })
+    );
   };
 
-  const deleteBlog = async (id) => {
-    if (!confirm("Delete this blog post?")) return;
-    try {
-      const res = await fetch(`/api/blogs/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        toast("Blog deleted", "success");
-        fetchDataForTab("blogs");
-        fetchStats();
-      }
-    } catch (err) {
-      toast("Deletion failed", "error");
-    }
-  };
+  const deleteBlog = (id) => deleteEntity("/api/blogs", "blogs", id, "Delete this blog post?", "Blog deleted");
 
   // 4. TESTIMONIALS CRUD
   const saveTestimonial = async (e) => {
     e.preventDefault();
-    const isEdit = testimonialForm.id !== null;
-    const url = isEdit ? `/api/testimonials/${testimonialForm.id}` : "/api/testimonials";
-    const method = isEdit ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(testimonialForm),
-      });
-
-      if (res.ok) {
-        toast(isEdit ? "Testimonial updated!" : "Testimonial saved!", "success");
+    await saveEntity(
+      "/api/testimonials",
+      "testimonials",
+      testimonialForm,
+      { create: "Testimonial saved!", edit: "Testimonial updated!" },
+      () =>
         setTestimonialForm({
           id: null,
           client_name: "",
@@ -434,179 +352,66 @@ export default function AdminPanel({ token, onLogout }) {
           client_company: "",
           feedback: "",
           avatar_url: "",
-        });
-        setEditingId(null);
-        fetchDataForTab("testimonials");
-        fetchStats();
-      }
-    } catch (err) {
-      toast("Request failed", "error");
-    }
+        })
+    );
   };
 
-  const deleteTestimonial = async (id) => {
-    if (!confirm("Delete testimonial?")) return;
-    try {
-      const res = await fetch(`/api/testimonials/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        toast("Testimonial deleted", "success");
-        fetchDataForTab("testimonials");
-        fetchStats();
-      }
-    } catch (err) {
-      toast("Deletion failed", "error");
-    }
-  };
+  const deleteTestimonial = (id) => deleteEntity("/api/testimonials", "testimonials", id, "Delete testimonial?", "Testimonial deleted");
 
   // 5. GALLERY CRUD
   const saveGallery = async (e) => {
     e.preventDefault();
-    const isEdit = galleryForm.id !== null;
-    const url = isEdit ? `/api/gallery/${galleryForm.id}` : "/api/gallery";
-    const method = isEdit ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(galleryForm),
-      });
-
-      if (res.ok) {
-        toast(isEdit ? "Gallery item updated!" : "Gallery item uploaded to SQL Database!", "success");
-        setGalleryForm({ id: null, title: "", image_url: "", category: "General" });
-        setEditingId(null);
-        fetchDataForTab("gallery");
-      }
-    } catch (err) {
-      toast("Request failed", "error");
-    }
+    await saveEntity(
+      "/api/gallery",
+      "gallery",
+      galleryForm,
+      { create: "Gallery item uploaded to SQL Database!", edit: "Gallery item updated!" },
+      () => setGalleryForm({ id: null, title: "", image_url: "", category: "General" }),
+      { refreshStats: false }
+    );
   };
 
-  const deleteGallery = async (id) => {
-    if (!confirm("Delete this gallery item?")) return;
-    try {
-      const res = await fetch(`/api/gallery/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        toast("Gallery item deleted", "success");
-        fetchDataForTab("gallery");
-      }
-    } catch (err) {
-      toast("Deletion failed", "error");
-    }
-  };
+  const deleteGallery = (id) =>
+    deleteEntity("/api/gallery", "gallery", id, "Delete this gallery item?", "Gallery item deleted", { refreshStats: false });
 
   // 5b. CERTIFICATES CRUD
   const saveCertificate = async (e) => {
     e.preventDefault();
-    const isEdit = certificateForm.id !== null;
-    const url = isEdit ? `/api/certificates/${certificateForm.id}` : "/api/certificates";
-    const method = isEdit ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(certificateForm),
-      });
-
-      if (res.ok) {
-        toast(isEdit ? "Certificate updated!" : "Certificate added to database!", "success");
-        setCertificateForm({ id: null, title: "", issuer: "", issue_date: "", credential_url: "", image_url: "" });
-        setEditingId(null);
-        fetchDataForTab("certificates");
-        fetchStats();
-      }
-    } catch (err) {
-      toast("Request failed", "error");
-    }
+    await saveEntity(
+      "/api/certificates",
+      "certificates",
+      certificateForm,
+      { create: "Certificate added to database!", edit: "Certificate updated!" },
+      () => setCertificateForm({ id: null, title: "", issuer: "", issue_date: "", credential_url: "", image_url: "" })
+    );
   };
 
-  const deleteCertificate = async (id) => {
-    if (!confirm("Are you sure you want to delete this certificate?")) return;
-    try {
-      const res = await fetch(`/api/certificates/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        toast("Certificate deleted successfully", "success");
-        fetchDataForTab("certificates");
-        fetchStats();
-      }
-    } catch (err) {
-      toast("Deletion failed", "error");
-    }
-  };
+  const deleteCertificate = (id) =>
+    deleteEntity("/api/certificates", "certificates", id, "Are you sure you want to delete this certificate?", "Certificate deleted successfully");
 
   // 5c. ORBIT TEXTS CRUD
   const saveOrbitText = async (e) => {
     e.preventDefault();
-    const isEdit = orbitTextForm.id !== null;
-    const url = isEdit ? `/api/orbit-texts/${orbitTextForm.id}` : "/api/orbit-texts";
-    const method = isEdit ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(orbitTextForm),
-      });
-
-      if (res.ok) {
-        toast(isEdit ? "Orbit text updated!" : "Orbit text added!", "success");
-        setOrbitTextForm({ id: null, text: "" });
-        setEditingId(null);
-        fetchDataForTab("orbit-texts");
-      } else {
-        toast("Request failed", "error");
-      }
-    } catch (err) {
-      toast("Request failed", "error");
-    }
+    await saveEntity(
+      "/api/orbit-texts",
+      "orbit-texts",
+      orbitTextForm,
+      { create: "Orbit text added!", edit: "Orbit text updated!" },
+      () => setOrbitTextForm({ id: null, text: "" }),
+      { refreshStats: false }
+    );
   };
 
-  const deleteOrbitText = async (id) => {
-    if (!confirm("Delete this rotating phrase?")) return;
-    try {
-      const res = await fetch(`/api/orbit-texts/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        toast("Orbit text deleted", "success");
-        fetchDataForTab("orbit-texts");
-      }
-    } catch (err) {
-      toast("Deletion failed", "error");
-    }
-  };
+  const deleteOrbitText = (id) =>
+    deleteEntity("/api/orbit-texts", "orbit-texts", id, "Delete this rotating phrase?", "Orbit text deleted", { refreshStats: false });
 
   // 6. MESSAGES MANAGEMENT
   const readMessage = async (msg) => {
     setSelectedMessage(msg);
     if (msg.is_read === 0) {
       try {
-        const res = await fetch(`/api/messages/${msg.id}/read`, {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
+        const { ok } = await apiPut(`/api/messages/${msg.id}/read`, undefined, token);
+        if (ok) {
           fetchDataForTab("messages");
           fetchStats();
         }
@@ -616,40 +421,21 @@ export default function AdminPanel({ token, onLogout }) {
     }
   };
 
-  const deleteMessage = async (id) => {
-    if (!confirm("Delete message from inbox?")) return;
-    try {
-      const res = await fetch(`/api/messages/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        toast("Message deleted from database", "success");
+  const deleteMessage = (id) =>
+    deleteEntity("/api/messages", "messages", id, "Delete message from inbox?", "Message deleted from database", {
+      onSuccess: () => {
         if (selectedMessage?.id === id) {
           setSelectedMessage(null);
         }
-        fetchDataForTab("messages");
-        fetchStats();
-      }
-    } catch (err) {
-      toast("Deletion failed", "error");
-    }
-  };
+      },
+    });
 
   // 7. PROFILE SETTINGS
   const saveProfile = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/auth/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(profileForm),
-      });
-
-      if (res.ok) {
+      const { ok } = await apiPut("/api/auth/profile", profileForm, token);
+      if (ok) {
         toast("Profile updated successfully on SQL Server!", "success");
         setProfileForm((prev) => ({ ...prev, password: "" }));
         fetchProfile();
@@ -665,16 +451,8 @@ export default function AdminPanel({ token, onLogout }) {
   const saveCmsSettings = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/settings", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(cmsSettings),
-      });
-
-      if (res.ok) {
+      const { ok } = await apiPut("/api/settings", cmsSettings, token);
+      if (ok) {
         toast("CMS Settings updated successfully in database!", "success");
         fetchDataForTab("settings");
       } else {

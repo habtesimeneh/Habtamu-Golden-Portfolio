@@ -12,6 +12,7 @@ import {
   Code2,
   Star
 } from "lucide-react";
+import { fetchJson } from "../lib/api.js";
 
 export default function Home() {
   const [typedText, setTypedText] = useState("");
@@ -48,56 +49,32 @@ export default function Home() {
   // Fetch Homepage data
   useEffect(() => {
     const fetchSettings = async () => {
-      try {
-        const res = await fetch("/api/settings");
-        if (res.ok) {
-          const data = await res.json();
-          setSettings((prev) => ({ ...prev, ...data }));
-        }
-      } catch (err) {
-        console.error("Error fetching homepage settings:", err);
-      } finally {
-        setLoading(false);
+      const data = await fetchJson("/api/settings");
+      if (data) {
+        setSettings((prev) => ({ ...prev, ...data }));
       }
+      setLoading(false);
     };
 
     const fetchOrbitTexts = async () => {
-      try {
-        const res = await fetch("/api/orbit-texts");
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            setOrbitPhrases(data.map((item) => item.text));
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching orbit texts:", err);
+      const data = await fetchJson("/api/orbit-texts");
+      if (Array.isArray(data) && data.length > 0) {
+        setOrbitPhrases(data.map((item) => item.text));
       }
     };
 
     const fetchGallery = async () => {
-      try {
-        const res = await fetch("/api/gallery");
-        if (res.ok) {
-          const data = await res.json();
-          setGalleryItems(data);
-        }
-      } catch (err) {
-        console.error("Error fetching gallery:", err);
-      } finally {
-        setGalleryLoading(false);
+      const data = await fetchJson("/api/gallery");
+      if (data) {
+        setGalleryItems(data);
       }
+      setGalleryLoading(false);
     };
 
     const fetchTestimonials = async () => {
-      try {
-        const res = await fetch("/api/testimonials");
-        if (res.ok) {
-          const data = await res.json();
-          setTestimonials(data);
-        }
-      } catch (err) {
-        console.error("Error fetching testimonials:", err);
+      const data = await fetchJson("/api/testimonials");
+      if (data) {
+        setTestimonials(data);
       }
     };
 

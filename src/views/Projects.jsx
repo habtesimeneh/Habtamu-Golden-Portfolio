@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, Github, ExternalLink, X, Folder, LayoutGrid, Database, Terminal, Cpu, ChevronDown, Image as ImageIcon } from "lucide-react";
+import { fetchJson } from "../lib/api.js";
 
 export default function Projects() {
     const [projects, setProjects] = useState([]);
@@ -36,29 +37,13 @@ export default function Projects() {
     }, [location]);
 
     const fetchProjects = async () => {
-        try {
-            const res = await fetch("/api/projects");
-            if (res.ok) {
-                setProjects(await res.json());
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+        setProjects(await fetchJson("/api/projects", []));
+        setLoading(false);
     };
 
     const fetchGallery = async () => {
-        try {
-            const res = await fetch("/api/gallery");
-            if (res.ok) {
-                setGalleryItems(await res.json());
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setGalleryLoading(false);
-        }
+        setGalleryItems(await fetchJson("/api/gallery", []));
+        setGalleryLoading(false);
     };
 
     const categories = ["All", "Web", "Mobile", "Design"];
